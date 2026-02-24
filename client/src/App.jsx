@@ -9,6 +9,7 @@ import MemoryDetail from './pages/MemoryDetail';
 import NetworkView from './pages/NetworkView';
 import Profile from './pages/Profile';
 import ToastProvider from './components/ToastProvider';
+import { Footer7 } from './components/ui/footer-7';
 import './App.css';
 
 function PrivateRoute({ children }) {
@@ -57,6 +58,7 @@ function AppContent() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
+      {!['/', '/auth'].includes(location.pathname) && <Footer7 />}
     </div>
   );
 }
