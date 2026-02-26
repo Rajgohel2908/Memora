@@ -328,7 +328,8 @@ export default function IntroAnimation() {
     // ─── Render Loop — subscribe to all motion values ───
     const [morphValue, setMorphValue] = useState(0);
     const [rotateValue, setRotateValue] = useState(0);
-    const [parallaxValue, setParallaxValue] = useState(0);
+    const [parallaxValue, setParallaxValue] = useState(0.5);
+    const [parallaxValueY, setParallaxValueY] = useState(0.5);
     const [gridVal, setGridVal] = useState(0);
     const [spiralVal, setSpiralVal] = useState(0);
     const [exitVal, setExitVal] = useState(0);
@@ -339,6 +340,7 @@ export default function IntroAnimation() {
             smoothMorph.on("change", setMorphValue),
             smoothScrollRotate.on("change", setRotateValue),
             smoothMouseX.on("change", setParallaxValue),
+            smoothMouseY.on("change", setParallaxValueY),
             smoothGrid.on("change", setGridVal),
             smoothSpiral.on("change", setSpiralVal),
             smoothExit.on("change", setExitVal),
@@ -363,9 +365,9 @@ export default function IntroAnimation() {
     // CTA: Strict appearance only during Exit phase
     const ctaOpacity = scrollValue < 6200 ? 0 : scrollValue < 6600 ? (scrollValue - 6200) / 400 : 1;
 
-    // Global 3D Tilt for Wow Factor
-    const globalTiltX = useTransform(smoothMouseY, [0, 1], [15, -15]);
-    const globalTiltY = useTransform(smoothMouseX, [0, 1], [-15, 15]);
+    // Global 3D Tilt for Wow Factor (tilting towards the mouse)
+    const globalTiltX = useTransform(smoothMouseY, [0, 1], [-15, 15]);
+    const globalTiltY = useTransform(smoothMouseX, [0, 1], [15, -15]);
 
     // Progress bar
     const progressPct = (scrollValue / MAX_SCROLL) * 100;
@@ -567,7 +569,7 @@ export default function IntroAnimation() {
                             const boundedRotation = -scrollProgressVal * maxRotation;
                             const currentArcAngle = startAngle + (i * step) + boundedRotation;
                             const arcRad = (currentArcAngle * Math.PI) / 180;
-                            const arcPos = { x: Math.cos(arcRad) * arcRadius + parallaxValue, y: Math.sin(arcRad) * arcRadius + arcCenterY, rotation: currentArcAngle + 90, scale: isMobile ? 1.4 : 1.8 };
+                            const arcPos = { x: Math.cos(arcRad) * arcRadius, y: Math.sin(arcRad) * arcRadius + arcCenterY, rotation: currentArcAngle + 90, scale: isMobile ? 1.4 : 1.8 };
 
                             target = {
                                 x: lerp(circlePos.x, arcPos.x, morphValue),
@@ -632,8 +634,8 @@ export default function IntroAnimation() {
                         }
 
                         // Parallax adjustments linked to global tilt
-                        const pX = (target.x || 0) + parallaxValue;
-                        const pY = (target.y || 0) + (mouseX.get() - 0.5) * -15; // inverse vertical float
+                        const pX = (target.x || 0) + (parallaxValue - 0.5) * 20;
+                        const pY = (target.y || 0) + (parallaxValueY - 0.5) * 20;
                         const finalTarget = { ...target, x: pX, y: pY };
                         return (
                             <FlipCard key={i} src={src} index={i} phase={introPhase} target={finalTarget}

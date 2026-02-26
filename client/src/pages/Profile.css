@@ -224,3 +224,36 @@
         width: 100%;
     }
 }
+
+/* ===== Dark Theme ===== */
+html.dark .profile-header {
+    background: rgba(36, 33, 32, 0.8);
+    border-color: rgba(74, 69, 65, 0.3);
+}
+
+html.dark .stat-card {
+    background: rgba(36, 33, 32, 0.8);
+    border-color: rgba(74, 69, 65, 0.3);
+}
+
+html.dark .profile-section {
+    background: rgba(36, 33, 32, 0.8);
+    border-color: rgba(74, 69, 65, 0.3);
+}
+
+html.dark .avatar-upload-btn {
+    background: #2E2B28;
+    border-color: var(--taupe-light);
+}
+
+html.dark .avatar-upload-btn:hover {
+    background: #3A3530;
+}
+
+html.dark .profile-avatar {
+    border-color: var(--taupe-light);
+}
+
+html.dark .mood-bar-track {
+    background: #2E2B28;
+}

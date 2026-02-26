@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
+import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/ToastProvider';
-import { signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '../config/firebase';
 import * as api from '../services/api';
+import PageTransition from '../components/PageTransition';
 import './Auth.css';
 
 export default function Auth() {
@@ -77,26 +77,29 @@ export default function Auth() {
         }
     };
 
-    const handleGoogleAuth = async () => {
-        setLoading(true);
-        try {
-            const result = await signInWithPopup(auth, googleProvider);
-            const idToken = await result.user.getIdToken();
-            const res = await api.googleLogin(idToken);
-
-            loginUser(res.data.token, res.data.user);
-            toast.success('Welcome to Memora!');
-            navigate('/dashboard');
-        } catch (err) {
-            console.error('Google Auth Error:', err);
-            toast.error(err.response?.data?.message || 'Google authentication failed');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const googleLogin = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            setLoading(true);
+            try {
+                const res = await api.googleLogin(tokenResponse.access_token);
+                loginUser(res.data.token, res.data.user);
+                toast.success('Welcome to Memora!');
+                navigate('/dashboard');
+            } catch (err) {
+                console.error('Google Auth Error:', err);
+                toast.error(err.response?.data?.message || 'Google authentication failed');
+            } finally {
+                setLoading(false);
+            }
+        },
+        onError: (error) => {
+            console.error('Google Login Failed:', error);
+            toast.error('Google login failed. Please try again.');
+        },
+    });
 
     return (
-        <div className="auth-page">
+        <PageTransition className="auth-page">
             <div className="auth-particles">
                 {Array.from({ length: 8 }).map((_, i) => (
                     <div key={i} className="auth-particle" style={{
@@ -197,7 +200,7 @@ export default function Auth() {
                     <button
                         type="button"
                         className="btn btn-outline btn-lg auth-google-btn"
-                        onClick={handleGoogleAuth}
+                        onClick={() => googleLogin()}
                         disabled={loading}
                     >
                         <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
@@ -219,6 +222,6 @@ export default function Auth() {
                     </button>
                 </div>
             </div>
-        </div>
+        </PageTransition>
     );
 }

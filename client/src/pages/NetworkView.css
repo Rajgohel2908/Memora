@@ -279,3 +279,42 @@
         display: none;
     }
 }
+
+/* Dark Theme Overrides for Network View */
+html.dark .network-controls {
+    background: rgba(36, 33, 32, 0.75);
+    /* var(--warm-white) with opacity */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html.dark .network-count {
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--text-secondary);
+}
+
+html.dark .zoom-toggle {
+    background: rgba(26, 24, 22, 0.6);
+    /* var(--mist-grey) */
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+html.dark .zoom-btn.active {
+    background: var(--taupe-dark);
+    color: var(--text-primary);
+}
+
+html.dark .filter-select {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: var(--text-primary) !important;
+}
+
+html.dark .network-tooltip {
+    background: rgba(36, 33, 32, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+html.dark .tooltip-mood {
+    background: rgba(0, 0, 0, 0.4);
+    color: var(--text-secondary);
+}

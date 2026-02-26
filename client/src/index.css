@@ -2,13 +2,35 @@
 @import "tailwindcss/utilities" layer(utilities);
 
 @theme {
-  --color-memora-bg: #DEDED1;
-  --color-memora-card: #B6AE9F;
-  --color-memora-surface: #C5C7BC;
-  --color-memora-glow: #FBF3D1;
-  --color-memora-text: #3f3a34;
-  --color-memora-text-secondary: #5C554D;
-  --color-memora-text-muted: #8A8279;
+  --color-memora-bg: var(--mist-grey);
+  --color-memora-card: var(--warm-taupe);
+  --color-memora-surface: var(--soft-grey-green);
+  --color-memora-glow: var(--cream-beige);
+  --color-memora-text: var(--text-primary);
+  --color-memora-text-secondary: var(--text-secondary);
+  --color-memora-text-muted: var(--text-muted);
+
+  /* shadcn-compatible colors */
+  --color-background: #FAFAF8;
+  --color-foreground: #3A3530;
+  --color-primary: #B6AE9F;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #DEDED1;
+  --color-secondary-foreground: #3A3530;
+  --color-muted: #DEDED1;
+  --color-muted-foreground: #8A8279;
+  --color-accent: #FBF3D1;
+  --color-accent-foreground: #3A3530;
+  --color-destructive: #C4766A;
+  --color-destructive-foreground: #FFFFFF;
+  --color-input: rgba(182, 174, 159, 0.3);
+  --color-ring: #B6AE9F;
+
+  /* Font */
+  --font-doto: 'Doto', sans-serif;
+
+  /* Animations */
+  --animate-spin-slow: spin-slow 20s linear infinite;
 }
 
 /* ===== CSS Variables / Design Tokens ===== */
@@ -35,19 +57,25 @@
   --accent-amber: #D4B778;
   --danger: #C4766A;
   --success: #8BAF88;
-
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(58, 53, 48, 0.08);
   --shadow-md: 0 4px 12px rgba(58, 53, 48, 0.1);
   --shadow-lg: 0 8px 30px rgba(58, 53, 48, 0.12);
   --shadow-xl: 0 16px 50px rgba(58, 53, 48, 0.15);
   --shadow-glow: 0 0 20px rgba(251, 243, 209, 0.4);
-  --shadow-card: 0 2px 8px rgba(58, 53, 48, 0.06), 0 8px 24px rgba(58, 53, 48, 0.08);
+  --shadow-card: 0 2px 8px rgba(58, 53, 48, 0.06),
+    0 8px 24px rgba(58, 53, 48, 0.08);
 
   /* Typography */
-  --font-display: 'Playfair Display', Georgia, serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-handwriting: 'Caveat', cursive;
+  --font-display: 'Playfair Display',
+    Georgia,
+    serif;
+  --font-body: 'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  --font-handwriting: 'Caveat',
+    cursive;
 
   /* Spacing */
   --space-xs: 4px;
@@ -72,6 +100,101 @@
   --transition-fast: 150ms var(--ease-smooth);
   --transition-base: 250ms var(--ease-smooth);
   --transition-slow: 400ms var(--ease-smooth);
+}
+
+/* Spin-slow animation for 404 page */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* shadcn ring offset */
+:root {
+  --ring-offset-background: #FAFAF8;
+}
+
+/* ===== Dark Theme ===== */
+html.dark {
+  --warm-taupe: #A09688;
+  --soft-grey-green: #3D3B38;
+  --mist-grey: #1A1816;
+  --cream-beige: #2E2B28;
+  --taupe-dark: #7D756A;
+  --taupe-deeper: #968E83;
+  --taupe-light: #4A4541;
+  --cream-glow: #3A3530;
+  --warm-white: #242120;
+  --text-primary: #E8E3DC;
+  --text-secondary: #C5BFB6;
+  --text-muted: #8A8279;
+  --text-light: #5C554D;
+  --accent-rose: #D4A59A;
+  --accent-lavender: #B8A9C9;
+  --accent-sage: #A3B5A0;
+  --accent-amber: #D4B778;
+  --danger: #D4766A;
+  --success: #8BAF88;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 16px 50px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 20px rgba(160, 150, 136, 0.15);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.15), 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+html.dark body {
+  color-scheme: dark;
+}
+
+html.dark .card {
+  background: #242120;
+}
+
+html.dark .toast {
+  background: #2E2B28;
+  border-left-color: var(--warm-taupe);
+}
+
+html.dark .modal-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+html.dark .modal-content {
+  background: #242120;
+}
+
+html.dark .input-field {
+  background: #1A1816;
+  border-color: var(--taupe-light);
+  color: var(--text-primary);
+}
+
+html.dark .input-field:focus {
+  background: #242120;
+  border-color: var(--warm-taupe);
+  box-shadow: 0 0 0 3px rgba(160, 150, 136, 0.15);
+}
+
+html.dark .tag {
+  background: var(--cream-beige);
+  color: var(--text-secondary);
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #1A1816;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #4A4541;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #5C554D;
 }
 
 /* ===== Reset & Base ===== */

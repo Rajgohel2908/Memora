@@ -1,0 +1,102 @@
+.map-view-wrapper {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--bg-primary);
+}
+
+.map-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 10;
+    pointer-events: none;
+    /* Let clicks pass through to map */
+}
+
+.map-header .btn {
+    pointer-events: auto;
+    /* Buttons still clickable */
+    background: rgba(20, 20, 20, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.map-title-overlay {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(20, 20, 20, 0.75);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 15px 25px;
+    border-radius: 12px;
+    color: white;
+    text-align: right;
+    pointer-events: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.map-title-overlay h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+.map-title-overlay p {
+    font-size: 0.85rem;
+    margin: 5px 0 0 0;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.map-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.map-marker {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.map-marker:hover {
+    transform: scale(1.5);
+    z-index: 20;
+}
+
+/* Mapbox overrides for dark theme */
+.maplibregl-popup-content {
+    background: rgba(20, 20, 20, 0.9) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px !important;
+    padding: 15px !important;
+    color: white;
+    pointer-events: none;
+}
+
+.maplibregl-popup-tip {
+    display: none;
+}
+
+.maplibregl-ctrl-group {
+    background: rgba(20, 20, 20, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.maplibregl-ctrl-group button {
+    filter: invert(1);
+}

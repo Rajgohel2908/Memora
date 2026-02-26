@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/ToastProvider';
-import { updateProfile, getMyMemories } from '../services/api';
+import { updateProfile, getMyMemories, updatePrivacy } from '../services/api';
+import PageTransition from '../components/PageTransition';
 import './Profile.css';
 
 export default function Profile() {
@@ -19,10 +20,13 @@ export default function Profile() {
     const [imagePreview, setImagePreview] = useState('');
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState({ totalMemories: 0, firstMemory: null, moods: {} });
+    const [showSettings, setShowSettings] = useState(false);
+    const [isPublic, setIsPublic] = useState(true);
 
     useEffect(() => {
         if (user) {
             setForm({ displayName: user.displayName || '', bio: user.bio || '' });
+            setIsPublic(user.isPublic ?? true);
             fetchStats();
         }
     }, [user]);
@@ -93,23 +97,17 @@ export default function Profile() {
     };
 
     return (
-        <div className="profile-page" ref={pageRef}>
-            <div className="container">
+        <PageTransition className="profile-page">
+            <div className="container" ref={pageRef}>
                 {/* Profile Header */}
                 <div className="profile-header profile-animate">
                     <div className="profile-avatar-section">
                         <div className="profile-avatar-wrapper">
-                            {(imagePreview || user?.profileImage) ? (
-                                <img
-                                    src={imagePreview || `http://localhost:5000${user.profileImage}`}
-                                    alt={user?.displayName}
-                                    className="profile-avatar"
-                                />
-                            ) : (
-                                <div className="profile-avatar profile-avatar-placeholder">
-                                    {(user?.displayName || user?.username || 'U')[0].toUpperCase()}
-                                </div>
-                            )}
+                            <img
+                                src={imagePreview || (user?.profileImage ? `http://localhost:5000${user.profileImage}` : '/default-avatar.png')}
+                                alt={user?.displayName}
+                                className="profile-avatar"
+                            />
                             {editing && (
                                 <label className="avatar-upload-btn" htmlFor="avatar-upload">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -169,12 +167,20 @@ export default function Profile() {
                                 </button>
                             </>
                         ) : (
-                            <button className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                </svg>
-                                Edit Profile
-                            </button>
+                            <>
+                                <button className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                    </svg>
+                                    Edit Profile
+                                </button>
+                                <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings(true)}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                                    </svg>
+                                    Settings
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>
@@ -232,6 +238,58 @@ export default function Profile() {
                     </div>
                 )}
             </div>
-        </div>
+
+            {/* Settings Modal */}
+            {showSettings && (
+                <div className="modal-backdrop" onClick={() => setShowSettings(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ padding: '2rem', maxWidth: '400px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Settings</h2>
+                            <button className="btn btn-ghost btn-icon" onClick={() => setShowSettings(false)}>✕</button>
+                        </div>
+
+                        <div className="input-group" style={{ marginBottom: '2rem' }}>
+                            <label style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                Profile Visibility
+                                <div
+                                    style={{
+                                        width: '44px', height: '24px',
+                                        background: isPublic ? 'var(--accent-amber)' : 'var(--taupe-light)',
+                                        borderRadius: '12px', position: 'relative', cursor: 'pointer',
+                                        transition: 'background 0.3s'
+                                    }}
+                                    onClick={async () => {
+                                        const newVal = !isPublic;
+                                        setIsPublic(newVal);
+                                        try {
+                                            await updatePrivacy(newVal);
+                                            toast.success('Privacy settings updated');
+                                        } catch (e) {
+                                            toast.error('Failed to update privacy');
+                                            setIsPublic(isPublic);
+                                        }
+                                    }}
+                                >
+                                    <div style={{
+                                        width: '20px', height: '20px', background: 'white',
+                                        borderRadius: '10px', position: 'absolute', top: '2px',
+                                        left: isPublic ? '22px' : '2px',
+                                        transition: 'left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                                    }}></div>
+                                </div>
+                            </label>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
+                                {isPublic
+                                    ? "Your profile is Public. Others can find you and send friend requests."
+                                    : "Your profile is Private. You won't appear in search results."}
+                            </p>
+                        </div>
+
+                        <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => setShowSettings(false)}>Done</button>
+                    </div>
+                </div>
+            )}
+        </PageTransition>
     );
 }

@@ -43,6 +43,29 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: '',
     },
+    isPublic: {
+        type: Boolean,
+        default: true, // Profiles are public by default
+    },
+    friends: [{
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        status: {
+            type: String,
+            enum: ['pending', 'accepted', 'rejected'],
+            default: 'pending'
+        },
+        sentBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
     createdAt: {
         type: Date,
         default: Date.now,

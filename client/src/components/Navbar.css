@@ -104,6 +104,23 @@
     gap: var(--space-md);
 }
 
+.theme-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--text-muted);
+    transition: all var(--transition-base);
+}
+
+.theme-toggle-btn:hover {
+    background: rgba(182, 174, 159, 0.12);
+    color: var(--text-primary);
+}
+
 .nav-profile {
     display: flex;
     align-items: center;
@@ -172,4 +189,44 @@
     .nav-link {
         padding: 8px 12px;
     }
+}
+
+/* ===== Dark Theme ===== */
+html.dark .navbar {
+    background: rgba(26, 24, 22, 0.9);
+    border-bottom-color: rgba(74, 69, 65, 0.3);
+}
+
+html.dark .nav-link:hover {
+    background: rgba(74, 69, 65, 0.3);
+}
+
+html.dark .nav-link.active {
+    background: rgba(74, 69, 65, 0.4);
+}
+
+html.dark .nav-link.create-btn {
+    background: var(--warm-taupe);
+    color: #1A1816;
+}
+
+html.dark .card-photo-count {
+    background: rgba(26, 24, 22, 0.85);
+    color: var(--text-secondary);
+}
+
+html.dark .theme-toggle-btn:hover {
+    background: rgba(74, 69, 65, 0.3);
+}
+
+html.dark .nav-profile:hover {
+    background: rgba(74, 69, 65, 0.3);
+}
+
+html.dark .nav-avatar {
+    border-color: var(--taupe-light);
+}
+
+html.dark .nav-logout:hover {
+    background: rgba(212, 118, 106, 0.15);
 }

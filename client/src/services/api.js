@@ -18,7 +18,7 @@ api.interceptors.request.use((config) => {
 // Auth
 export const signup = (data) => api.post('/auth/signup', data);
 export const login = (data) => api.post('/auth/login', data);
-export const googleLogin = (idToken) => api.post('/auth/google', { idToken });
+export const googleLogin = (accessToken) => api.post('/auth/google', { accessToken });
 export const getMe = () => api.get('/auth/me');
 export const updateProfile = (formData) =>
     api.put('/auth/profile', formData, {
@@ -40,6 +40,14 @@ export const deleteMemory = (id) => api.delete(`/memories/${id}`);
 export const getTimelineGrouped = () => api.get('/memories/timeline/grouped');
 
 // Users
+export const searchUsers = (q) => api.get('/users/search', { params: { q } });
 export const getUserProfile = (username) => api.get(`/users/${username}`);
+export const updatePrivacy = (isPublic) => api.put('/users/privacy', { isPublic });
+
+// Friends
+export const getFriends = () => api.get('/users/friends');
+export const sendFriendRequest = (id) => api.post(`/users/friends/request/${id}`);
+export const acceptFriendRequest = (id) => api.post(`/users/friends/accept/${id}`);
+export const rejectFriendRequest = (id) => api.post(`/users/friends/reject/${id}`);
 
 export default api;

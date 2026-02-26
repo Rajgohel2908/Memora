@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import MoodPlayer from './MoodPlayer';
 import './MemoryCard.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -33,6 +35,34 @@ export default function MemoryCard({ memory, index = 0, viewMode = 'grid' }) {
     const cardRef = useRef(null);
     const navigate = useNavigate();
 
+    // 3D Tilt Logic
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+
+    const mouseXSpring = useSpring(x);
+    const mouseYSpring = useSpring(y);
+
+    const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["5deg", "-5deg"]);
+    const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-5deg", "5deg"]);
+
+    const handleMouseMove = (e) => {
+        if (!cardRef.current) return;
+        const rect = cardRef.current.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const xPct = mouseX / width - 0.5;
+        const yPct = mouseY / height - 0.5;
+        x.set(xPct);
+        y.set(yPct);
+    };
+
+    const handleMouseLeave = () => {
+        x.set(0);
+        y.set(0);
+    };
+
     useGSAP(() => {
         if (!cardRef.current) return;
 
@@ -42,20 +72,18 @@ export default function MemoryCard({ memory, index = 0, viewMode = 'grid' }) {
                 opacity: 0,
                 y: 40,
                 scale: 0.95,
-                rotateX: 5,
             },
             {
                 scrollTrigger: {
                     trigger: cardRef.current,
-                    start: 'top 90%', // Animate when top of card is at 90% of viewport
+                    start: 'top 90%',
                     toggleActions: 'play none none none',
                 },
                 opacity: 1,
                 y: 0,
                 scale: 1,
-                rotateX: 0,
                 duration: 0.7,
-                delay: index < 12 ? index * 0.08 : 0, // Only delay initial load
+                delay: index < 12 ? index * 0.08 : 0,
                 ease: 'power3.out',
             }
         );
@@ -91,20 +119,24 @@ export default function MemoryCard({ memory, index = 0, viewMode = 'grid' }) {
     const isTextOnly = !memory.photos || memory.photos.length === 0;
 
     return (
-        <div
+        <motion.div
             ref={cardRef}
             className={`memory-card ${isTextOnly ? 'text-only' : 'with-image'} ${viewMode === 'timeline' ? 'timeline-card' : ''} ${memory.mood ? `mood-${memory.mood}` : ''}`}
             onClick={handleClick}
-            style={
-                isTextOnly && memory.mood
-                    ? { background: MOOD_GRADIENTS[memory.mood] }
-                    : undefined
-            }
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            style={{
+                rotateX,
+                rotateY,
+                transformStyle: "preserve-3d",
+                ...(isTextOnly && memory.mood ? { background: MOOD_GRADIENTS[memory.mood] } : {})
+            }}
         >
             {/* Photo card */}
             {!isTextOnly && (
                 <div className="card-image-wrapper">
-                    <img
+                    <motion.img
+                        layoutId={`memory-img-${memory._id}`}
                         src={`http://localhost:5000${memory.photos[0]}`}
                         alt={memory.title || 'Memory'}
                         className="card-image"
@@ -133,6 +165,12 @@ export default function MemoryCard({ memory, index = 0, viewMode = 'grid' }) {
                 </div>
             )}
 
+            {memory.audioUrl && (
+                <div className="card-audio-preview" style={{ padding: '0 20px', marginTop: '10px' }}>
+                    <MoodPlayer audioUrl={memory.audioUrl} mood={memory.mood} />
+                </div>
+            )}
+
             {/* Card footer */}
             <div className="card-footer">
                 <div className="card-meta">
@@ -148,6 +186,19 @@ export default function MemoryCard({ memory, index = 0, viewMode = 'grid' }) {
                             {MOOD_EMOJIS[memory.mood]} {memory.mood}
                         </span>
                     )}
+
+                    {memory.collaborators && memory.collaborators.length > 0 && (
+                        <div className="card-collaborators" style={{ display: 'flex', marginLeft: 'auto', marginRight: '6px' }}>
+                            {memory.collaborators.map((c, i) => (
+                                <div key={c._id || i} title={c.displayName || c.username} style={{
+                                    width: 18, height: 18, borderRadius: '50%', backgroundColor: 'var(--surface-color)', border: '1.5px solid var(--bg-primary)', marginLeft: '-6px', position: 'relative', zIndex: memory.collaborators.length - i, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', color: 'var(--text-secondary)', overflow: 'hidden'
+                                }}>
+                                    {c.profileImage ? <img src={`http://localhost:5000${c.profileImage}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (c.displayName?.[0] || c.username?.[0] || 'U').toUpperCase()}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     {memory.tags && memory.tags.length > 0 && (
                         <div className="card-tags">
                             {memory.tags.slice(0, 3).map((tag) => (
@@ -160,6 +211,6 @@ export default function MemoryCard({ memory, index = 0, viewMode = 'grid' }) {
 
             {/* Polaroid tape effect */}
             <div className="card-tape" />
-        </div>
+        </motion.div>
     );
 }

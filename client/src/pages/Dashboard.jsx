@@ -2,9 +2,13 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
+import { getMyMemories, updatePrivacy } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { getMyMemories } from '../services/api';
+import { useToast } from '../components/ToastProvider';
 import MemoryCard from '../components/MemoryCard';
+import SkeletonCard from '../components/SkeletonCard';
+import PageTransition from '../components/PageTransition';
+import TimeCapsule from '../components/TimeCapsule';
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -15,6 +19,18 @@ export default function Dashboard() {
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [viewMode, setViewMode] = useState('grid');
+    const [timeCapsuleMemory, setTimeCapsuleMemory] = useState(null);
+    const [showTimeCapsule, setShowTimeCapsule] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
+    const [isPublic, setIsPublic] = useState(true); // Default assuming true, will sync with user on mount
+    const toast = useToast();
+
+    useEffect(() => {
+        if (user) {
+            setIsPublic(user.isPublic ?? true);
+        }
+    }, [user]);
+
     const headerRef = useRef(null);
     const viewToggleRef = useRef(null);
     const observer = useRef();
@@ -34,8 +50,44 @@ export default function Dashboard() {
         try {
             pageNum === 1 ? setLoading(true) : setLoadingMore(true);
             const res = await getMyMemories({ limit: 12, page: pageNum });
-            setMemories(prev => pageNum === 1 ? res.data.memories : [...prev, ...res.data.memories]);
+            const mems = res.data.memories;
+
+            setMemories(prev => pageNum === 1 ? mems : [...prev, ...mems]);
             setHasMore(res.data.page < res.data.pages);
+
+            // Check for Time Capsule on initial load
+            if (pageNum === 1 && mems.length > 0) {
+                const lastShown = localStorage.getItem('lastTimeCapsuleDate');
+                const today = new Date().toDateString();
+
+                if (lastShown !== today) {
+                    const oneYearAgo = new Date();
+                    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+                    let potentialMems = mems.filter(m => m.photos && m.photos.length > 0);
+                    if (potentialMems.length === 0) potentialMems = mems;
+
+                    let capsuleMem = potentialMems.find(m => {
+                        const mDate = new Date(m.memoryDate);
+                        return mDate.getDate() === oneYearAgo.getDate() &&
+                            mDate.getMonth() === oneYearAgo.getMonth() &&
+                            mDate.getFullYear() === oneYearAgo.getFullYear();
+                    });
+
+                    if (!capsuleMem && potentialMems.length > 0) {
+                        capsuleMem = potentialMems[Math.floor(Math.random() * potentialMems.length)];
+                    }
+
+                    if (capsuleMem) {
+                        setTimeout(() => {
+                            setTimeCapsuleMemory(capsuleMem);
+                            setShowTimeCapsule(true);
+                            localStorage.setItem('lastTimeCapsuleDate', today);
+                        }, 500); // slight delay after dashboard loads
+                    }
+                }
+            }
+
         } catch (err) {
             console.error('Error fetching memories:', err);
         } finally {
@@ -77,7 +129,7 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="dashboard">
+        <PageTransition className="dashboard">
             <div className="container-wide">
                 {/* Header */}
                 <div className="dashboard-header" ref={headerRef}>
@@ -91,12 +143,20 @@ export default function Dashboard() {
                                 : `You have ${memories.length} ${memories.length === 1 ? 'memory' : 'memories'} captured`}
                         </p>
                     </div>
-                    <Link to="/create" className="btn btn-primary">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                        New Memory
-                    </Link>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <button className="btn btn-ghost" onClick={() => setShowSettings(true)}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                            </svg>
+                            Settings
+                        </button>
+                        <Link to="/create" className="btn btn-primary">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                            New Memory
+                        </Link>
+                    </div>
                 </div>
 
                 {/* View controls */}
@@ -193,6 +253,77 @@ export default function Dashboard() {
                     <div ref={lastMemoryElementRef} style={{ height: '20px', margin: '20px 0' }}></div>
                 )}
             </div>
-        </div>
+
+            {showTimeCapsule && timeCapsuleMemory && (
+                <TimeCapsule
+                    memory={timeCapsuleMemory}
+                    onClose={() => setShowTimeCapsule(false)}
+                />
+            )}
+
+            {/* Privacy Settings Modal */}
+            {showSettings && (
+                <div className="modal-backdrop" onClick={() => setShowSettings(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ padding: '2rem', maxWidth: '400px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Account Settings</h2>
+                            <button className="btn btn-ghost btn-icon" onClick={() => setShowSettings(false)}>✕</button>
+                        </div>
+
+                        <div className="input-group" style={{ marginBottom: '2rem' }}>
+                            <label style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                Profile Visibility
+
+                                {/* Toggle Switch UI */}
+                                <div
+                                    style={{
+                                        width: '44px',
+                                        height: '24px',
+                                        background: isPublic ? 'var(--warm-taupe)' : 'var(--taupe-light)',
+                                        borderRadius: '12px',
+                                        position: 'relative',
+                                        cursor: 'pointer',
+                                        transition: 'background 0.3s'
+                                    }}
+                                    onClick={async () => {
+                                        const newVal = !isPublic;
+                                        setIsPublic(newVal);
+                                        try {
+                                            await updatePrivacy(newVal);
+                                            toast.success('Privacy settings updated');
+                                        } catch (e) {
+                                            toast.error('Failed to update privacy');
+                                            setIsPublic(isPublic); // Rollback on error
+                                        }
+                                    }}
+                                >
+                                    <div style={{
+                                        width: '20px',
+                                        height: '20px',
+                                        background: 'white',
+                                        borderRadius: '10px',
+                                        position: 'absolute',
+                                        top: '2px',
+                                        left: isPublic ? '22px' : '2px',
+                                        transition: 'left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                                    }}></div>
+                                </div>
+                            </label>
+
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
+                                {isPublic
+                                    ? "Your profile is Public. Friends can search for you and collaborate on mutual memories."
+                                    : "Your profile is Private. You are hidden from search and cannot be tagged in new shared memories."}
+                            </p>
+                        </div>
+
+                        <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => setShowSettings(false)}>
+                            Done
+                        </button>
+                    </div>
+                </div>
+            )}
+        </PageTransition>
     );
 }

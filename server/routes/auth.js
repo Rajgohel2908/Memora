@@ -81,20 +81,24 @@ router.post('/login', async (req, res) => {
 // Google Auth Login/Signup
 router.post('/google', async (req, res) => {
     try {
-        const { idToken } = req.body;
-        if (!idToken) return res.status(400).json({ message: 'No idToken provided' });
+        const { accessToken } = req.body;
+        if (!accessToken) return res.status(400).json({ message: 'No access token provided' });
 
-        const admin = require('../config/firebaseAdmin');
-        let decodedToken;
+        // Fetch user info from Google using the access token
+        const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
 
-        if (!admin.apps.length) {
-            console.warn('Firebase Admin not configured on server, using fallback MOCK verifier.');
-            decodedToken = await admin.mockVerifyIdToken(idToken);
-        } else {
-            decodedToken = await admin.auth().verifyIdToken(idToken);
+        if (!response.ok) {
+            return res.status(401).json({ message: 'Invalid Google access token' });
         }
 
-        const { email, name, picture, uid } = decodedToken;
+        const googleUser = await response.json();
+        const { email, name, picture, sub: googleId } = googleUser;
+
+        if (!email) {
+            return res.status(400).json({ message: 'Could not retrieve email from Google' });
+        }
 
         let user = await User.findOne({ email });
 
@@ -102,9 +106,9 @@ router.post('/google', async (req, res) => {
             user = new User({
                 username: email.split('@')[0] + Math.floor(Math.random() * 10000),
                 email,
-                displayName: name,
+                displayName: name || email.split('@')[0],
                 profileImage: picture || '',
-                googleId: uid,
+                googleId,
                 authProvider: 'google',
             });
             await user.save();
@@ -118,7 +122,7 @@ router.post('/google', async (req, res) => {
             user: user.toJSON(),
         });
     } catch (error) {
-        console.error('Google Auth backend crash:', error);
+        console.error('Google Auth backend error:', error);
         res.status(500).json({ message: 'Failed to authenticate with Google' });
     }
 });
@@ -126,7 +130,7 @@ router.post('/google', async (req, res) => {
 // Get current user
 router.get('/me', auth, async (req, res) => {
     try {
-        const user = await User.findById(req.userId);
+        const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -146,7 +150,7 @@ router.put('/profile', auth, upload.single('profileImage'), async (req, res) => 
             updates.profileImage = `/uploads/${req.file.filename}`;
         }
 
-        const user = await User.findByIdAndUpdate(req.userId, updates, { new: true });
+        const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true });
         res.json({ user: user.toJSON() });
     } catch (error) {
         res.status(500).json({ message: 'Error updating profile' });

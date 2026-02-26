@@ -4,6 +4,9 @@ import gsap from 'gsap';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/ToastProvider';
 import { getMemory, deleteMemory } from '../services/api';
+import { motion } from 'framer-motion';
+import PageTransition from '../components/PageTransition';
+import MoodPlayer from '../components/MoodPlayer';
 import './MemoryDetail.css';
 
 const MOOD_EMOJIS = {
@@ -85,8 +88,8 @@ export default function MemoryDetail() {
     const isTextOnly = !memory.photos || memory.photos.length === 0;
 
     return (
-        <div className="memory-detail" ref={contentRef}>
-            <div className="container">
+        <PageTransition className="memory-detail">
+            <div className="container" ref={contentRef}>
                 {/* Nav */}
                 <div className="detail-nav detail-animate">
                     <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
@@ -117,7 +120,8 @@ export default function MemoryDetail() {
                 {!isTextOnly && (
                     <div className="detail-gallery detail-animate">
                         <div className="gallery-main">
-                            <img
+                            <motion.img
+                                layoutId={`memory-img-${memory._id}`}
                                 src={`http://localhost:5000${memory.photos[activePhoto]}`}
                                 alt={memory.title}
                                 className="gallery-image"
@@ -139,6 +143,16 @@ export default function MemoryDetail() {
                     </div>
                 )}
 
+                {/* Audio Player */}
+                {memory.audioUrl && (
+                    <div className="detail-audio detail-animate">
+                        <MoodPlayer
+                            audioUrl={memory.audioUrl}
+                            mood={memory.mood}
+                        />
+                    </div>
+                )}
+
                 {/* Content */}
                 <div className={`detail-content ${isTextOnly ? 'text-only-detail' : ''}`}>
                     <div className="detail-date detail-animate">
@@ -150,6 +164,21 @@ export default function MemoryDetail() {
 
                     {memory.title && (
                         <h1 className="detail-title detail-animate">{memory.title}</h1>
+                    )}
+
+                    {memory.collaborators && memory.collaborators.length > 0 && (
+                        <div className="detail-collaborators detail-animate" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px' }}>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Shared with:</span>
+                            <div style={{ display: 'flex' }}>
+                                {memory.collaborators.map((c, i) => (
+                                    <div key={c._id || i} title={c.displayName || c.username} style={{
+                                        width: 28, height: 28, borderRadius: '50%', backgroundColor: 'var(--surface-color)', border: '2px solid var(--bg-primary)', marginLeft: i > 0 ? '-10px' : '0', position: 'relative', zIndex: memory.collaborators.length - i, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: 'var(--text-secondary)', overflow: 'hidden', fontWeight: 'bold'
+                                    }}>
+                                        {c.profileImage ? <img src={`http://localhost:5000${c.profileImage}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (c.displayName?.[0] || c.username?.[0] || 'U').toUpperCase()}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     )}
 
                     {memory.mood && (
@@ -198,6 +227,6 @@ export default function MemoryDetail() {
                     </div>
                 </div>
             )}
-        </div>
+        </PageTransition>
     );
 }

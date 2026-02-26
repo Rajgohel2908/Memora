@@ -6,6 +6,10 @@ const memorySchema = new mongoose.Schema({
         ref: 'User',
         required: true,
     },
+    collaborators: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    }],
     title: {
         type: String,
         trim: true,
@@ -20,6 +24,14 @@ const memorySchema = new mongoose.Schema({
     photos: [{
         type: String, // file paths
     }],
+    audioUrl: {
+        type: String,
+        default: '',
+    },
+    location: {
+        lat: { type: Number, default: null },
+        lng: { type: Number, default: null }
+    },
     memoryDate: {
         type: Date,
         required: true,

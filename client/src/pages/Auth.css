@@ -158,3 +158,39 @@
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
+
+/* ===== Dark Theme ===== */
+html.dark .auth-page {
+    background: linear-gradient(170deg, #1A1816 0%, #242120 50%, #2E2B28 100%);
+}
+
+html.dark .auth-card {
+    background: rgba(36, 33, 32, 0.9);
+    border-color: rgba(74, 69, 65, 0.3);
+}
+
+html.dark .auth-particle {
+    background: var(--warm-taupe);
+    opacity: 0.08;
+}
+
+html.dark .auth-divider::before,
+html.dark .auth-divider::after {
+    border-bottom-color: rgba(74, 69, 65, 0.4);
+}
+
+html.dark .auth-google-btn {
+    background: #2E2B28;
+    color: var(--text-primary);
+    border-color: rgba(74, 69, 65, 0.5);
+}
+
+html.dark .auth-google-btn:hover:not(:disabled) {
+    background: #3A3530;
+    border-color: rgba(74, 69, 65, 0.8);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+html.dark .auth-toggle-btn {
+    color: var(--warm-taupe);
+}

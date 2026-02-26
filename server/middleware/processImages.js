@@ -4,12 +4,20 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
 const processImages = async (req, res, next) => {
-    if (!req.files || req.files.length === 0) {
+    // Handle both upload.array() (array) and upload.fields() (object) formats
+    let allFiles = [];
+    if (Array.isArray(req.files)) {
+        allFiles = req.files;
+    } else if (req.files && typeof req.files === 'object') {
+        // upload.fields() returns { photos: [...], audio: [...] }
+        allFiles = Object.values(req.files).flat();
+    }
+
+    if (allFiles.length === 0) {
         return next();
     }
 
     try {
-        const processedFiles = [];
         const uploadDir = path.join(__dirname, '..', process.env.UPLOAD_DIR || './uploads');
 
         // Ensure upload directory exists
@@ -17,8 +25,14 @@ const processImages = async (req, res, next) => {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
 
+        // Separate images from audio files
+        const imageFiles = allFiles.filter(f => f.mimetype.startsWith('image/'));
+        const audioFiles = allFiles.filter(f => f.mimetype.startsWith('audio/'));
+
+        // Process images with sharp
+        const processedImages = [];
         await Promise.all(
-            req.files.map(async (file) => {
+            imageFiles.map(async (file) => {
                 const filename = `${uuidv4()}.webp`;
                 const filepath = path.join(uploadDir, filename);
 
@@ -28,20 +42,30 @@ const processImages = async (req, res, next) => {
                     .webp({ quality: 80 })
                     .toFile(filepath);
 
-                processedFiles.push({
+                processedImages.push({
                     filename: filename,
                     path: filepath,
                     mimetype: 'image/webp',
-                    size: file.size // Approximate
+                    size: file.size,
                 });
             })
         );
 
-        // Replace req.files with the newly written file metadata
-        req.files = processedFiles;
+        // Save audio files directly (no processing)
+        if (audioFiles.length > 0) {
+            const audioFile = audioFiles[0]; // Only one audio per memory
+            const ext = audioFile.mimetype.split('/')[1] === 'mpeg' ? 'mp3' : audioFile.mimetype.split('/')[1];
+            const filename = `${uuidv4()}.${ext}`;
+            const filepath = path.join(uploadDir, filename);
+            fs.writeFileSync(filepath, audioFile.buffer);
+            req.audioFile = { filename, path: filepath, mimetype: audioFile.mimetype };
+        }
+
+        // Replace req.files with processed image metadata only
+        req.files = processedImages;
         next();
     } catch (err) {
-        console.error('Image processing error:', err);
+        console.error('File processing error:', err);
         next(err);
     }
 };

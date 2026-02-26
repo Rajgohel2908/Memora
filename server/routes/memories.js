@@ -10,9 +10,10 @@ const router = express.Router();
 // Get memories grouped by time (for timeline/network)
 router.get('/timeline/grouped', auth, async (req, res) => {
     try {
-        const memories = await Memory.find({ user: req.userId })
+        const memories = await Memory.find({ user: req.user.id })
             .sort({ memoryDate: 1 })
-            .populate('user', 'username displayName profileImage');
+            .populate('user', 'username displayName profileImage')
+            .populate('collaborators', 'username displayName profileImage');
 
         // Group by year and month
         const grouped = {};
@@ -39,13 +40,14 @@ router.get('/timeline/grouped', auth, async (req, res) => {
 router.get('/my', auth, async (req, res) => {
     try {
         const { page = 1, limit = 50, sort = '-memoryDate' } = req.query;
-        const memories = await Memory.find({ user: req.userId })
+        const memories = await Memory.find({ user: req.user.id })
             .sort(sort)
             .skip((page - 1) * limit)
             .limit(parseInt(limit))
-            .populate('user', 'username displayName profileImage');
+            .populate('user', 'username displayName profileImage')
+            .populate('collaborators', 'username displayName profileImage');
 
-        const total = await Memory.countDocuments({ user: req.userId });
+        const total = await Memory.countDocuments({ user: req.user.id });
 
         res.json({ memories, total, page: parseInt(page), pages: Math.ceil(total / limit) });
     } catch (error) {
@@ -55,11 +57,17 @@ router.get('/my', auth, async (req, res) => {
 });
 
 // Create memory
-router.post('/', auth, upload.array('photos', 10), processImages, async (req, res) => {
+router.post('/', auth, upload.fields([{ name: 'photos', maxCount: 10 }, { name: 'audio', maxCount: 1 }]), processImages, async (req, res) => {
     try {
-        const { title, content, memoryDate, tags, mood } = req.body;
+        const { title, content, memoryDate, tags, mood, lat, lng, collaborators } = req.body;
 
-        const photos = req.files ? req.files.map((f) => `/uploads/${f.filename}`) : [];
+        const photos = req.files && req.files.photos ? req.files.photos.map((f) => `/uploads/${f.filename}`) : [];
+        // Also check processed image files on req.files array (from processImages)
+        const processedPhotos = Array.isArray(req.files) ? req.files.map(f => `/uploads/${f.filename}`) : [];
+        const allPhotos = photos.length > 0 ? photos : processedPhotos;
+
+        // Audio from processImages middleware
+        const audioUrl = req.audioFile ? `/uploads/${req.audioFile.filename}` : '';
 
         // Parse tags safely
         let parsedTags = [];
@@ -72,17 +80,24 @@ router.post('/', auth, upload.array('photos', 10), processImages, async (req, re
         }
 
         const memory = new Memory({
-            user: req.userId,
+            user: req.user.id,
             title: title || '',
             content: content || '',
-            photos,
+            photos: allPhotos,
+            audioUrl,
             memoryDate: memoryDate ? new Date(memoryDate) : new Date(),
             tags: parsedTags,
             mood: mood && mood.trim() !== '' ? mood : undefined,
+            location: {
+                lat: lat ? parseFloat(lat) : null,
+                lng: lng ? parseFloat(lng) : null,
+            },
+            collaborators: collaborators ? JSON.parse(collaborators) : [],
         });
 
         await memory.save();
         await memory.populate('user', 'username displayName profileImage');
+        await memory.populate('collaborators', 'username displayName profileImage');
 
         res.status(201).json({ memory });
     } catch (error) {
@@ -95,7 +110,8 @@ router.post('/', auth, upload.array('photos', 10), processImages, async (req, re
 router.get('/:id', auth, async (req, res) => {
     try {
         const memory = await Memory.findById(req.params.id)
-            .populate('user', 'username displayName profileImage');
+            .populate('user', 'username displayName profileImage')
+            .populate('collaborators', 'username displayName profileImage');
 
         if (!memory) {
             return res.status(404).json({ message: 'Memory not found' });
@@ -109,7 +125,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // Update memory
-router.put('/:id', auth, upload.array('photos', 10), processImages, async (req, res) => {
+router.put('/:id', auth, upload.fields([{ name: 'photos', maxCount: 10 }, { name: 'audio', maxCount: 1 }]), processImages, async (req, res) => {
     try {
         const memory = await Memory.findById(req.params.id);
 
@@ -117,11 +133,11 @@ router.put('/:id', auth, upload.array('photos', 10), processImages, async (req, 
             return res.status(404).json({ message: 'Memory not found' });
         }
 
-        if (memory.user.toString() !== req.userId) {
+        if (memory.user.toString() !== req.user.id) {
             return res.status(403).json({ message: 'Not authorized' });
         }
 
-        const { title, content, memoryDate, tags, mood, existingPhotos } = req.body;
+        const { title, content, memoryDate, tags, mood, existingPhotos, lat, lng, collaborators } = req.body;
 
         if (title !== undefined) memory.title = title;
         if (content !== undefined) memory.content = content;
@@ -134,6 +150,19 @@ router.put('/:id', auth, upload.array('photos', 10), processImages, async (req, 
             }
         }
         if (mood !== undefined) memory.mood = mood && mood.trim() !== '' ? mood : '';
+        if (lat !== undefined || lng !== undefined) {
+            memory.location = {
+                lat: lat ? parseFloat(lat) : memory.location?.lat || null,
+                lng: lng ? parseFloat(lng) : memory.location?.lng || null,
+            };
+        }
+        if (collaborators) {
+            try {
+                memory.collaborators = typeof collaborators === 'string' ? JSON.parse(collaborators) : collaborators;
+            } catch {
+                memory.collaborators = [];
+            }
+        }
 
         // Handle photos: keep existing + add new
         let photos = memory.photos;
@@ -144,11 +173,19 @@ router.put('/:id', auth, upload.array('photos', 10), processImages, async (req, 
                 photos = memory.photos;
             }
         }
-        if (req.files && req.files.length > 0) {
-            const newPhotos = req.files.map((f) => `/uploads/${f.filename}`);
+        // Check both array format and fields format for processed images
+        const newPhotos = Array.isArray(req.files)
+            ? req.files.map(f => `/uploads/${f.filename}`)
+            : (req.files && req.files.photos ? req.files.photos.map(f => `/uploads/${f.filename}`) : []);
+        if (newPhotos.length > 0) {
             photos = [...photos, ...newPhotos];
         }
         memory.photos = photos;
+
+        // Handle audio
+        if (req.audioFile) {
+            memory.audioUrl = `/uploads/${req.audioFile.filename}`;
+        }
 
         await memory.save();
         await memory.populate('user', 'username displayName profileImage');
@@ -169,7 +206,7 @@ router.delete('/:id', auth, async (req, res) => {
             return res.status(404).json({ message: 'Memory not found' });
         }
 
-        if (memory.user.toString() !== req.userId) {
+        if (memory.user.toString() !== req.user.id) {
             return res.status(403).json({ message: 'Not authorized' });
         }
 

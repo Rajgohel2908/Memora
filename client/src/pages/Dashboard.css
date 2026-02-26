@@ -234,3 +234,22 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* ===== Dark Theme ===== */
+html.dark .view-toggle {
+    background: rgba(36, 33, 32, 0.8);
+    border-color: rgba(74, 69, 65, 0.3);
+}
+
+html.dark .view-btn.active {
+    background: #2E2B28;
+    color: var(--text-primary);
+}
+
+html.dark .timeline-dot {
+    border-color: #1A1816;
+}
+
+html.dark .timeline-count {
+    background: var(--cream-beige);
+}

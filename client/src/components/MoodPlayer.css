@@ -1,0 +1,91 @@
+.mood-player {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(182, 174, 159, 0.4);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 300px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    cursor: default;
+}
+
+.mood-player.playing {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 10px var(--mood-color, transparent);
+    border-color: var(--mood-color, rgba(182, 174, 159, 0.8));
+}
+
+html.dark .mood-player {
+    background: rgba(36, 33, 32, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+html.dark .mood-player.playing {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 10px var(--mood-color, transparent);
+    border-color: var(--mood-color, rgba(255, 255, 255, 0.3));
+}
+
+.play-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid;
+    background: transparent;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s;
+    flex-shrink: 0;
+}
+
+.play-btn:hover {
+    transform: scale(1.05);
+    opacity: 0.8;
+}
+
+.play-btn:active {
+    transform: scale(0.95);
+}
+
+.waveform-container {
+    flex-grow: 1;
+    position: relative;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.waveform-base,
+.waveform-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    overflow: hidden;
+}
+
+.waveform-base {
+    width: 100%;
+}
+
+.waveform-progress {
+    width: 0%;
+    transition: width 0.1s linear;
+    mask-image: linear-gradient(to right, black, black);
+    -webkit-mask-image: linear-gradient(to right, black, black);
+}
+
+.wave-bar,
+.wave-bar-active {
+    width: 4px;
+    border-radius: 2px;
+}
